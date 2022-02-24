@@ -6,6 +6,7 @@ contract Bank{
     address public owner;
     uint256 private transactionCount;
     uint private customerCount;
+    uint private pool;
     
     mapping(address => uint256) private balances;
 
@@ -45,6 +46,7 @@ contract Bank{
     function deposit(uint amount) public payable{
         address user = msg.sender;
         balances[user] +=  amount;
+        pool += amount;
         emit Deposit(user, owner, amount, block.timestamp);
         transactionCount ++;
     }
@@ -54,6 +56,7 @@ contract Bank{
         require(balances[user] >= amount, "Balance is appropriate");
 
         balances[user] -= amount;
+        pool -= amount;
         emit Transfer(owner ,user , amount, message = "Withdraw",block.timestamp);
  
         transactionCount ++;
@@ -88,6 +91,9 @@ contract Bank{
         return transactionCount;
     }
 
+    function allBalancepool() public view returns (uint) {
+        return pool;
+    }
 
     fallback() external {
         revert();

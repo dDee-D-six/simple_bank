@@ -118,36 +118,74 @@ const WalletCard = () => {
 		withdrawTransaction();
 	  };
       
+    // --- Balance ---
+    const [balanceInbank, setBalanceInbank] = useState(null);
+    const balanceCheck = async () => {
+        try {
+            if(!ethereum) return alert("Please install metamask");
+            const transactionsContract = getEtherumContract();
+            const balance = await transactionsContract.balance();
+            const amount = parseInt(balance) * (10**-18);
+            setBalanceInbank(amount);
+            console.log(amount);
+        } catch (error) {
+            console.log(error);
+        }
+    }
 
+    const [bankBalance, setBankBalance] = useState(null);
+    const bankBalanceCheck = async () => {
+        try {
+            if(!ethereum) return alert("Please install metamask");
+            const transactionsContract = getEtherumContract();
+            const balance = await transactionsContract.allBalancepool();
+            const amount = parseInt(balance) * (10**-18);
+            setBankBalance(amount)
+            console.log(amount);
+        } catch (error) {
+            console.log(error);
+        }
+    }
     
+
+    //------ Transactions and Transfer------
+
+    const handleChange_transfer = async (e, name)=> {
+        setFormData((prev) => ({...prev, [name]: e.target.value}));
+      }
+    
+	const transferSubmit = (e) => {
+		e.preventDefault();
+        const { addressTo, amount, message } = formData;
+        console.log(formData);
+		if (!addressTo || !amount || !message) return;
+
+		sendTransaction();
+	  };
+
 	const sendTransaction = async ()=> {
         try {
             if(!ethereum) return alert("Please install metamask");
-            const addressTo = '0xe3826B72869a4E32e5a6E3BF2c23b7FDDD1b2D99'
+            const {addressTo, amount, message} = formData;
             const transactionsContract = getEtherumContract();
-            const parsedAmount = ethers.utils.parseEther(val);
+            const parsedAmount = ethers.utils.parseEther(amount);
 
             await ethereum.request({
                 method: "eth_sendTransaction",
                 params: [{
-                    from: defaultAccount,
+                    from: defaultAccount[0],
                     to: addressTo,
                     gas: '0x5208' ,//2100 GWEI
                     value: parsedAmount._hex,
                 }]
             })
 
-            const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, 'message');
+            const transactionHash = await transactionsContract.addToBlockchain(addressTo, parsedAmount, message);
             setIsLoading(true)
             console.log(`loading - ${transactionHash.hash}`)
             await transactionHash.wait()
             setIsLoading(false)
             console.log(`Success - ${transactionHash.hash}`)
-
-            const transactionCount = await transactionsContract.getTransactionCount();
-
-            //get the data from the form
-            await setIsLoading(transactionCount.toNumber())
             window.location.reload();
         }catch(err) {
             console.log(err);
@@ -193,6 +231,7 @@ const WalletCard = () => {
 
     return (
 		<div>
+            {/*                        Connect                                   */}
 			<div className='walletCard'>
 				<h4 className="grid grid-cols-3 gap-4 "> {"Connection to MetaMask"} </h4>
 					<h1>
@@ -210,11 +249,10 @@ const WalletCard = () => {
 					<div className='balanceDisplay'>
 						<h3>Balance: {userBalance}</h3>
 					</div>
-
 					{errorMessage}
 				</div>
 
-
+                {/*                        Deposit                                   */}
 				<div className='walletCard'>
 					<div>
 						<button
@@ -234,7 +272,8 @@ const WalletCard = () => {
 						</div>
 					</div>
 				</div>
-
+                
+                {/*                        Widraw                                   */}
 				<div className='walletCard'>
 					<div>
 						<button
@@ -255,6 +294,59 @@ const WalletCard = () => {
                         name="message" 
                         type="text" 
                         handleChange={ handleChange_withdraw } />
+						</div>
+					</div>
+				</div>
+
+                {/*                        Balance                                   */}
+                <div className='walletCard'>
+				<h4 className="grid grid-cols-3 gap-4 "> Checking Balance of this user</h4>
+					<h1>
+						<button 
+							type="button"
+							onClick={ balanceCheck }
+							className="flex flex-row justify-center items-center my-5 bg-[#916666] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
+							>
+						Check
+					</button></h1>
+					<div className='balanceDisplay'>
+						<h3>Balance: {balanceInbank }</h3>
+					</div>
+
+					{errorMessage}
+				</div>
+                <div className='walletCard'>
+				<h4 className="grid grid-cols-3 gap-4 "> Check Balance Pool of bank</h4>
+					<h1>
+						<button 
+							type="button"
+							onClick={ bankBalanceCheck }
+							className="flex flex-row justify-center items-center my-5 bg-[#916666] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
+							>
+						Bank Balance Pool
+					</button></h1>
+					<div className='balanceDisplay'>
+						<h3>Balance: { bankBalance }</h3>
+					</div>
+
+					{errorMessage}
+				</div>
+
+                {/*                       Transfer                          */}
+                <div className='walletCard'>
+					<div>
+						<button
+						type="button" 
+						onClick={ transferSubmit }
+						className="flex flex-row justify-center items-center my-5 bg-[#916666] p-3 rounded-full cursor-pointer hover:bg-[#2546bd]"
+						>
+							Transfer
+						</button>
+						<div>
+						<Input placeholder="Address To" name="addressTo" type="text" handleChange={handleChange_transfer} />
+                        <Input placeholder="Amount (ETH)" name="amount" type="number" handleChange={handleChange_transfer} />
+                        <Input placeholder="Enter Message" name="message" type="text" handleChange={handleChange_transfer} />
+
 						</div>
 					</div>
 				</div>
